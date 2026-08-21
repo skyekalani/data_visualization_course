@@ -1,0 +1,189 @@
+---
+title: "Lab 1: Reproducible Data Visualization Workflow"
+format:
+  html:
+    toc: true
+    code-copy: true
+    code-tools: true
+execute:
+  warning: false
+  message: false
+---
+
+## Load Packages
+```{r}
+library(tidyverse)
+library(here)
+library(fs)
+```
+## Confirm Project Root
+```{r, results='hide'}
+here()
+```
+## Create Folder Structure
+```{r}
+folders <- c(
+  "data","figures","scripts",
+"tables","assignments","labs",
+"portfolio")
+
+dir_create(folders)
+
+```
+
+## Inspect Folder Structure
+```{r}
+dir_ls()
+```
+## Simulated Public Health Dataset
+```{r}
+set.seed(716)
+
+County <- c(
+  "Dougherty", "Lee", "Abbot", 
+  "Greg", "Jackson", "Bob", 
+  "Door", "Custer", "Baldwin", 
+  "Gila", "Orange", "Pike")
+
+Region <- c(
+  "North", "Central", "South")
+
+Adult_population <- c(
+  2500, 18500, 3200, 
+  27500, 41000, 22500, 
+  30000, 15500, 36000, 
+  29000, 21000, 38500)
+
+Asthma_visits <- c(
+  1750, 1420, 2560, 
+  1980, 3100, 1650, 
+  2250, 1180, 2870, 
+  2050, 1510, 2950)
+
+Vaccination_rate <- c(
+  0.68, 0.72, 0.61, 
+  0.75, 0.64, 0.70, 
+  0.58, 0.77, 0.66,
+  0.71, 0.63, 0.69)
+  
+Asthma_visit_rate <- round(
+  (Asthma_visits / Adult_population),1)
+
+PHdataset <- data.frame(
+  County, 
+  Region, 
+  Adult_population, 
+  Asthma_visits, 
+  Vaccination_rate, 
+  Asthma_visit_rate
+  )
+```
+
+## Save Dataset
+```{r}
+write.csv(PHdataset, 
+          here("data/county_health_data.csv"
+               ))
+```
+
+## Remove Health Data
+```{r}
+rm(PHdataset)
+```
+
+## Import Health Data
+```{r, results='hide'}
+county_health_data <- read_csv(
+  "data/county_health_data.csv"
+  )
+here()
+```
+
+## Inspect Health Data
+```{r}
+glimpse(county_health_data)
+```
+
+## Summarize Health Data
+```{r}
+countyhealthdatasum <- county_health_data %>%
+           summarise(
+             numcounties = n_distinct(County),
+             meanvaxrates = mean(Vaccination_rate),
+             medasthmavisrate = median(Asthma_visits)
+             ) 
+print(countyhealthdatasum)
+```
+
+## Create Vaccination Plot
+```{r}
+vaccination_plot <- ggplot(county_health_data, 
+            aes(
+              x = reorder(County, Vaccination_rate),
+              y = Vaccination_rate,
+              fill = Vaccination_rate
+            ))+
+  geom_bar(stat = "identity")+
+  geom_hline(
+    yintercept = 0.80, 
+    linetype = "dashed", 
+    color = "purple"
+    )+
+  coord_flip()+
+  scale_fill_gradient( 
+    low = "lightpink",
+    high = "hotpink"
+    )+
+  labs(
+    x = "Ranked Counties",
+    y = "Vaccine Coverage",
+    title = "Counties Ranked by Simulated Vaccine Coverage",
+    caption = "Horizontal bar chart ranking fictional counties by simulated vaccination coverage."
+  )+ 
+  theme(
+    plot.caption = element_text(hjust = 0.5), legend.position = "none")
+
+vaccination_plot
+```
+
+## Save Vaccination Plot
+```{r}
+ggsave(
+  filename = here("figures", "lab01_vaccination_coverage.png"),
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+```
+
+## Independent Visualization
+```{r}
+independent_plot <- ggplot(county_health_data,
+                           aes(
+                             x = Adult_population,
+                             y = Asthma_visits
+                      ))+
+  geom_point(color = "#5026e9")+
+  labs(
+    x = "Adult Population",
+    y = "Asthma Visits",
+    title = "Adult Population and the Distribution of Asthma Visits",
+    caption = "Scatterplot of simulated adult population and asthma visits among fictious counties."
+  )+
+  theme(
+    plot.caption = element_text(hjust = 0.5
+                                ))
+
+independent_plot
+```
+
+## Save Independent Vaccination Plot
+```{r}
+ggsave(
+  filename = here("figures", "lab01_independent_visualization.png"),
+  width = 8,
+  height = 5,
+  dpi = 300
+)
+```
+
