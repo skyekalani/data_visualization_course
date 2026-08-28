@@ -1,0 +1,193 @@
+---
+title: "Lab 2: Applying the Grammar of Graphics"
+author: "Skye Johnson"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-tools: true
+execute:
+  eval: false
+  warning: false
+  message: false
+---
+
+## Load Packages
+```{r}
+library(tidyverse)
+library(gapminder)
+```
+
+## Prepare Data
+```{r}
+gapminderData_2007 <- gapminder %>%
+  filter(year == 2007) %>%
+  rename(
+    Life_Expectancy = lifeExp,
+    Population = pop,
+    GDP_per_Capita = gdpPercap
+    )
+    
+```
+
+## Scatterplot
+```{r}
+gapminderData_figure_2007 <- ggplot(
+  data = gapminderData_2007,
+  mapping = aes(
+    x = GDP_per_Capita,
+    y = Life_Expectancy,
+    color = continent
+  )
+) +
+  geom_point()+
+  
+  scale_x_log10( limits = c(500, 55000),
+    breaks = c(500, 1000, 2000, 5000, 10000,20000,50000),
+    labels = c("500", "1k", "2k","5k", "10k", "20k", "50k"
+               ))+
+  # Log-scale x axis and fix labels
+
+  scale_color_viridis_d()+
+  
+  # Color-blind friendly palette
+  labs(
+    title = " GDP per Capita and Life Expectancy in 2007 ",
+    x = "GDP Per Capita (log scale)",
+    y = "Life Expectancy (years)"
+  )+
+  theme(
+    legend.position = "bottom"
+    )
+
+gapminderData_figure_2007
+```
+## Mean Life Expectancy for Bar Chart
+```{r}
+gapminder_LE_summary <- gapminderData_2007 %>%
+  group_by(
+    continent
+    ) %>%
+  summarize(
+    mean_Life_Expectancy = mean(
+      Life_Expectancy,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  )
+```
+
+
+## Ranked Bar Chart
+```{r}
+gapminderbar_plot <- ggplot(
+  data = gapminder_LE_summary,
+  mapping = aes(
+              x = reorder(continent, mean_Life_Expectancy),
+              y = mean_Life_Expectancy,
+              fill = mean_Life_Expectancy
+            ))+
+  geom_bar(stat = "identity")+
+  coord_flip()+ # flip axes to make horizontal bar chart
+  labs(
+    x = "Continent",
+    y = "Mean Life Expectancy (years)",
+    title = " Continents Ranked by Mean Life Expectancy in 2007"
+  )+ 
+  theme( legend.position = "none")
+
+gapminderbar_plot
+```
+## Boxplot
+```{r}
+gapminderbox_plot <- ggplot(
+  data = gapminderData_2007,
+  mapping = aes(
+    x = continent,
+    y = Life_Expectancy
+  )
+) +
+  geom_boxplot()+
+  labs(
+    x = "Continent",
+    y = "Life Expectancy (years)",
+    title = " Distribution of Life Expectancy Across Continents in 2007"
+  )
+
+gapminderbox_plot
+```
+## Faceted Scatterplot
+```{r}
+gapminderfaceted_plot <- ggplot(
+  data = gapminderData_2007,
+  mapping = aes(
+    x = GDP_per_Capita,
+    y = Life_Expectancy
+  )
+) +
+  geom_point(
+    alpha = 0.7
+  ) +
+  scale_x_log10() +
+  facet_wrap(
+    vars(continent)
+  )+
+  # creates multiple visuals in one to show relationship by continent
+  labs(
+    x = "Gross Domestic Product (GDP) per Capita (log scale)",
+    y = "Life Expectancy (years)",
+    title = "GDP per Capita and Life Expectancy by Continent in 2007"
+  )
+  
+gapminderfaceted_plot
+```
+### Identify the Grammar
+
+For one graph, identify the data, aesthetics, geometry, scales, labels, facets, and theme.
+
+**Response:** For the above graph, the data is gapminderData_2007, which contains variables such as Country, Continent, Year, Life Expectancy, GDP per capita, and Population. The aesthetics consist of the GDP per capita variable as the x coordinate and the Life Expectancy variable as the y. The geometry is geom_point, which displays a scatterplot. The scales are scale_x_log(10), which displays the x axis values on a log scale. The graph contains facets, which display the separate GDP per Capita and life expectancy relationships by continent. Lastly, the x axis of the graph is labeled Gross Domestic Product (GDP) per Capita (log scale), the y axis is labeled Life Expectancy (years), and the graph is titled GDP per Capita and Life Expectancy by Continent in 2007.
+
+## Gapminder Independent Visualization
+```{r}
+# Research Question: Is GDP per Capita associated with Population size across different countries in 2007?
+
+gapminderData_IV_2007 <- ggplot(
+  data = gapminderData_2007,
+  mapping = aes(
+    x = GDP_per_Capita,
+    y = Population,
+    color = continent
+  )
+) +
+  geom_point()+
+scale_x_log10(limits = c(500, 55000),
+    breaks = c(500, 1000, 2000, 5000, 10000,20000,50000),
+    labels = c("500", "1k", "2k","5k", "10k", "20k", "50k"
+               )) +
+  scale_y_log10(
+    breaks = c(1e6, 1e7, 1e8, 1e9), # population log-scaled by scientific notation 
+    labels = c("1M", "10M", "100M", "1B")
+  ) +
+  labs(
+    title = "GDP per Capita and Population Size across countries in 2007",
+    alt = "Scatterplot showing Gross Domestic Product (GDP) per Capita and population size across countries in 2007. There is no clear trend occuring in the scatterplot, with country data points colored by continent.", # alternative text which is read out by text 2 speech
+    x = "GDP per Capita (log scale)",
+    y = "Population Size (log scale)"
+  )+
+  theme(legend.position = "bottom")
+
+gapminderData_IV_2007
+```
+
+## Independent Visualization Rationale
+
+The independent visualization shows a scatterplot of Gross Domestic Product(GDP) per Capita and Population size across countries in 2007. The research question, along with this graph, is: Is GDP per Capita associated with Population size across countries in 2007? I decided to create this visualization because a scatterplot allows two numeric variables to be examined for potential trends. This visualization allows me to assess whether an association exists between GDP per Capita and a country's population size. It also allows me to see whether clustering among countries on the same continent occurs. From a public health perspective, this scatterplot provides context for understanding differences in available economic resources that may vary with a country's population size. Ultimately, examining if differences in economic resources exist across countries highlights potential challenges related to a country's healthcare infrastructure, disease burden, and widespread public health efforts. 
+
+# Reflection
+
+1. Which aesthetic mappings changed the meaning of the graph?
+2. When did faceting improve interpretation?
+3. Which graph most clearly communicated one finding?
+
+**Response:** The aesthetic mappings that changed the graph's meaning were when I used color to represent continents. Specifically, one graph I created examined GDP per Capita and Life Expectancy in 2007, with colors mapped by continent. By adding the color mapping, I was able to analyze the relationship not only in a single overall trend across countries but also to identify whether countries within the same continent clustered or exhibited distinct patterns. Moreover, faceting improved the interpretation of the graph when examining GDP per capita and life expectancy by continent. Separating each relationship by continent made the trends within each region easier to understand and compare. Lastly, the ranked bar chart, which showed the average life expectancy by continent, most clearly communicated one finding. By ordering the continents from highest to lowest average life expectancy, differences among the continents were clearly distinguishable.
