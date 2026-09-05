@@ -1,0 +1,222 @@
+---
+title: "Lab 3: Data Wrangling for Visualization"
+format: html
+editor: visual
+---
+
+## Packages
+```{r}
+library(tidyverse)
+```
+
+## Part 1: Create Raw Health Data
+```{r}
+raw_health_data <- data.frame(
+ 
+  County_fips = c(
+    13095, 13177, 13321, 13005, 13069, 13007, 13077, 13181 ,13069),
+  
+  County = c(
+    "Dougherty", "Lee", "Worth", "Bacon", "Coffee", "Baker", "Coweta", "Lincoln", "Coffee"),
+  
+  Region = c(
+    "South West","South West", "South West","South East", "South Central", "South West", "West Central", "East Central", "South Central"),
+  
+  Population_2023 = c(
+    86000, 31000, 21000, 3200, 22000, 8500, 30000, 47000, 22000),
+  
+ Population_2024 = c(
+   85500, 30800, 20800, 3150, 21800, 8400, 29800, 46800, 21800),
+  
+  Cases_2023 = c(
+    1250, 410, 275, 48, 1250, 120, 390, 580, 1250),
+  
+  Cases_2024 = c(
+    1320, 435, 290, 52, 1320, NA, 405, 610, 1320)
+)
+raw_health_data
+```
+## Part 2: Diagnose
+```{r}
+
+glimpse(raw_health_data)
+
+duplicated(raw_health_data) # Shows if rows are repeated. Will show as TRUE. 1st instance shows as FALSE. 9th row = TRUE
+
+
+```
+
+## Part 2: Diagnose Continued
+```{r}
+summary(raw_health_data) # Shows missing values for each column if present. Shows one NA in Case_2024 Column
+```
+
+## Part 3: Remove Duplicates
+```{r}
+health_data_clean <- raw_health_data %>%
+  distinct() 
+
+health_data_clean  
+```
+## Part 4: Reshape long
+```{r}
+health_data_long <- health_data_clean %>%
+  pivot_longer(
+    cols = c(starts_with("Population_"),
+             starts_with("Cases_")
+             ),
+    names_to = c(
+      ".value", "Year"),
+    names_sep = "_"
+  ) %>%
+  mutate(
+    Year = str_remove(
+      Year,
+      "Population_|Cases_"
+    )
+  )
+  
+health_data_long
+```
+## Part 5: Calculate Rates
+```{r}
+health_data_rates <- health_data_long %>%
+ mutate(
+   Cases_per_100k = (
+     Cases / Population) * 100000
+ ) 
+health_data_rates
+```
+## Part 6:  Summarize Region
+```{r}
+Region_trends <- health_data_rates %>%
+  group_by(
+    Region,
+    Year
+  ) %>%
+  summarize(
+    mean_rates = mean(
+      Cases_per_100k,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  ) 
+
+Region_trends
+```
+## Create Contextual Data
+```{r}
+county_rural_status <- data.frame(
+  
+  County_fips = c(
+    13095, 13177, 13321, 13005, 13069, 13007, 13077, 13181 ,13069),
+  
+  Rural_Status = c( 
+    "Urban", "Rural", "Rural", "Rural", "Rural", "Rural", "Urban", "Rural", "Rural")
+)
+county_rural_status
+```
+## Part 7: Join Contextual Data
+```{r}
+joined_county_health_data <- county_rural_status %>%
+  left_join(
+    health_data_rates,
+    by = c("County_fips")
+  )
+```
+## Part 8: Regional Line Graph Visualization
+```{r}
+regional_line_graph <- ggplot(
+  data = Region_trends,
+  mapping = aes(
+    x = Year,
+    y = mean_rates,
+    color = Region,
+    group = Region
+  )
+) +
+  geom_line( linewidth = 1
+  )+
+  labs(
+    title = "Average Case Rates Across Georgia Regions",
+    x = "Year",
+    y = "Mean Case Rates",
+    color = "Region",
+    caption = "Georgia Regions plotted by simulated cases per every 100,000 people. Counties with missing values not included."
+  ) +
+  theme(plot.caption = element_text(hjust = 0))
+
+regional_line_graph
+```
+```{r, results='hide'}
+rankedgraph_Data_2024 <- joined_county_health_data %>%
+  filter(
+    Year == 2024, !is.na(Cases))
+
+```
+
+## Part 8: Ranked 2024 County Graph Visualization
+```{r}
+ranked_county_graph <- ggplot(
+  data = rankedgraph_Data_2024,
+  mapping = aes(
+              x = reorder(County, Cases_per_100k),
+              y = Cases_per_100k,
+              fill = Cases_per_100k
+            ))+
+  geom_bar(stat = "identity")+
+  coord_flip()+ # flip axes to make horizontal bar chart
+   scale_fill_gradient( 
+    low = "orange",
+    high = "orangered3"
+    )+
+  # color gradient doesn't really show because case values are close together.
+  labs(
+    x = "County",
+    y = "Cases per every 100,000 persons",
+    title = " Georgia Counties Ranked by Cases per every 100,000 in 2024",
+    caption = "Georgia counties ranked by simulated cases per every 100,000 people. Counties with missing values not included."
+  )+ 
+  theme(plot.caption = element_text(hjust = 0),
+    legend.position = "none")
+
+ranked_county_graph
+```
+```{r, results='hide'}
+ruralstatusdata_2023 <- joined_county_health_data %>%
+  filter(
+    Year == 2023, !is.na(Cases))
+```
+
+## Part 8: Rural-Status Comparison Visualization
+```{r}
+
+ruralstatusgraph_2023 <- ggplot(
+  data = ruralstatusdata_2023,
+  mapping = aes(
+    x = Rural_Status,
+    y = Cases_per_100k,
+    fill = Rural_Status
+  )
+) +
+  geom_col()+
+  scale_fill_manual(
+    values = c("#87CEEB", "#4A708B")
+  )+ # trying out hex codes
+   labs(
+    x = "Rural Status",
+    y = "Cases (per every 100k)",
+    title = "Georgia Rural County Staus and Cases per every 100,000 in 2023",
+    caption = "Georgia counties and simulated cases per every 100,000 people. Counties with missing values not included."
+  )+
+  theme(plot.caption = element_text(hjust = 0),
+    legend.position = "none")
+
+ruralstatusgraph_2023
+```
+# Reflection
+
+Explain why long format was useful, what causes row multiplication during joins, and why rates are preferable to counts.
+
+**Response:** Turning my data into long format is useful because it allows me to observe data under a single variable rather than multiple variables. In the context of my county health data, I used the long format to convert observations separated by multiple-year variables into a single variable. This mechanism is useful because it allowed me to create and analyze graphs more easily. Moreover, row multiplications occur when joining two datasets together, and each observation is not uniquely identified. This means that if one dataset has a duplicate key, when a join occurs, the duplicate key will appear more than once in the resulting joined dataset. To prevent this, check for and remove duplicates before joining datasets. Lastly, rates are preferable to counts because rates account for group size when doing comparisons. For instance, in my county health data, case rates account for county population size, whereas the count of cases does not. Ultimately, using rates allows for better comparison of groups regardless of size and enables true patterns across groups to be understood rather than mistaken.
+
