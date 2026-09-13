@@ -1,0 +1,155 @@
+---
+title: "Lab 4: Visualization Redesign and Accessibility"
+format: html
+editor: visual
+---
+
+## Packages 
+```{r}
+library(tidyverse)
+library(gapminder)
+```
+## Part 1: Poor Graph
+```{r, results='hide'}
+
+design_data <- gapminder %>%
+  filter(year == 2007) %>%
+  group_by(continent) %>%
+  summarize(
+    mean_gdp = mean(
+      gdpPercap,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot(
+  data = design_data,
+  mapping = aes(
+    x = continent,
+    y = mean_gdp,
+    fill = continent
+  )
+) +
+  geom_col(
+    color = "black",
+    linewidth = 1
+  ) +
+  scale_fill_manual(
+    values = c(
+      "red",
+      "darkgreen",
+      "blue",
+      "black",
+      "purple")
+  )+
+  labs(
+    title = "Average GDP",
+    x = "Continent",
+    y = "GDP",
+    fill = "Continent"
+  ) +
+  theme_gray() +
+  theme(
+    panel.grid.major = element_line(
+      linewidth = 2
+    ),
+    panel.border = element_rect(
+      fill = NA,
+      color = "white",
+      linewidth = 1
+    ),
+    legend.position = "right"
+  )
+```
+# Part 2: Critique
+
+Identify five problems and explain their effects.
+
+**Response:** In the graph above, there is no clear or explicit title, no descriptive axis, a redundant legend, prominent grid lines, and dark color coding. The absence of a distinct title or axis prevents the viewer from correctly interpreting the graph. Having a redundant legend makes the graph cluttered. Lastly, prominent grid lines and the dark color coding make the graph harder to read.
+
+## Part 3: Redesign
+```{r}
+ggplot(
+  data = design_data,
+  mapping = aes(
+    x = reorder(
+      continent,
+      mean_gdp
+    ),
+    y = mean_gdp,
+    fill = continent
+  )
+) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average Gross Domestic Product (GDP) per Capita Ranked by Continent",
+    subtitle = "Continent-level mean GDP in 2007",
+    x = NULL,
+    y = "Mean GDP per Capita (Log scale)",
+    caption = "Source: Gapminder",
+    alt = "Bar chart showing continents ranked from highest to lowest average gross domestic product (GDP) in 2007. Oceania has the highest whereas Africa has the lowest average GDP."
+  ) +
+  theme_minimal()+
+  theme(panel.grid.major.y = element_blank(),
+        legend.position = "none")
+  
+```
+## Part 4: Highlighting
+```{r, results='hide'}
+highlightdata <- gapminder %>%
+  filter(year == 2007) %>% 
+  mutate(
+    highlight_group = ifelse(
+    continent == "Africa", 
+    "Africa",
+    "Other Continents" 
+  ))
+```
+
+```{r}
+highlightingvisual <- ggplot(highlightdata,
+                    aes(
+                      x = gdpPercap,
+                      y = lifeExp,
+                      shape = highlight_group
+                      )) +
+  geom_point(aes(color = highlight_group), alpha= 0.7, size = 3)+
+  
+ scale_color_viridis_d(
+    end = 0.85
+  ) +
+  
+  scale_x_log10(
+    limits = c(500, 55000),
+    breaks = c(500, 1000, 2000, 5000, 10000,20000,50000),
+    labels = c("500", "1k", "2k","5k", "10k", "20k", "50k"
+               ))+
+   labs(
+    title = " GDP per Capita and Life Expectancy Across Countries in 2007: Highlighting Africa",
+    x = "GDP Per Capita (log scale)",
+    y = "Life Expectancy (years)",
+    alt = "Scatterplot showing the relationship between GDP per Capita and life expectancy across countries in 2007, with African countries highlighted separately from countries in other continents."
+  )+
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank())
+
+highlightingvisual
+```
+
+## Part 5: Accessibility Review
+
+Evaluate color dependence, contrast, font size, legend use, grayscale readability, and alt text.
+
+**Response:** The highlighted visualization addresses several accessibility concerns. Color dependence is reduced by using both a color-blind-friendly color palette and shapes to distinguish African countries from other countries shown in the scatterplot. The viridis color scale also provides color contrast, making plot points easier to read for those with color blindness and those without. Differences in the shapes of the plotted points also improve greyscale readability. The legend is positioned at the bottom to avoid redundancy in the graph and improve readability. Lastly, the graph includes alt text that describes the visualization and its purpose, enabling a screen reader to effectively convey the graph to those visually impaired.
+
+## Part 6: Published Graphic Critique
+
+Critique an instructor-approved public health graphic for purpose, data, chart choice, accessibility, uncertainty, and ethics.
+
+![Published public health graphic](labs/PublishedHealthGraph.jpeg)
+
+**Response:** The purpose of the graph above is to show the distribution of fatigue duration and intensity among adults in the United States aged 18 and older who experienced frequent fatigue in 2024. The graph uses data from the 2024 National Health Interview Survey, conducted by the National Center for Health Statistics. The bar chart used is an appropriate chart choice because it allows viewers to easily compare percentages across different groups such as fatigue duration and intensity. Regarding accessibility, the graph is not dependent on color, as categories are distinguished by axis labels and position. However, the font size of certain graph elements, such as the caption, may be difficult to read. The graph does not include elements indicating uncertainty, but it notes ethical considerations, stating that estimates are based on household interviews of a sample of the U.S. noninstitutionalized population and that estimates may not add up to 100 due to rounding. This statement ensures that viewers are not misled when interpreting the graph's contents. 
