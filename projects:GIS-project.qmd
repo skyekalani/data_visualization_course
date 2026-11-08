@@ -1,0 +1,29 @@
+---
+title: "Geographic Information Systems (GIS) for Public Health: Simulated Vaccination Coverage in Georgia Counties"
+format: html
+editor: visual
+---
+
+```{=html}
+<iframe
+       src="interactive_vaxmap.html" 
+       style="width: 105%; border: none; height: 600px">
+</iframe>
+```
+
+Navigation: Users can explore the interactive map by zooming in and out, panning across Georgia, and hovering over individual counties to view additional information. Each county displays its name, simulated vaccination coverage rate, and simulated child population. The color gradient represents vaccination coverage, allowing users to visually compare simulated rates across counties.
+
+# Methods
+Georgia county boundary data were obtained from the `maps` package and processed using the `sf` package in R. County identifiers and county names were retained to establish consistent geographic unit of analysis. County geometries were also evaluated for validity. Invalid geometries were corrected to ensure that county boundaries could be properly processed and visualized. 
+
+For the interactive map, simulated health data was generated using a fixed random seed of 716 to create vaccination coverage and child population variables for each Georgia county. The simulated health data was then joined using a `left_join()` and assesed to verify county records and missing data. 
+
+Joined data was then used to to create an interactive choropleth map showing vaccination coverage across each Georgia county. The interactive cholorpleth map was developed using the `leaflet` package. A visually accessible color palatte represents vaccination coverage, while county labels displays the county name, simulated vaccination rate, and simulated child population. 
+
+# Limitations 
+There are several limitations to consider when viewing the simulated vaccination coverage across Georgia counties. The main limitation is that the vaccination coverage rates and child population values are generated rather than obtained from current public health record. Therefore, the map does not represent the true vaccination patterns across Georgia Counties and should not be used to interpret actual vaccination coverage or geographic disparities in Georgia. Because the health indicators are simulated they also should not be used to make policy or public health-based decisions. Lastly, this analysis was conducted at the county level, which can conceal differences within individual counties. Therefore, the make should not be used to make neighborhood or individual-level interpretations regarding vaccination coverage patterns.
+
+![](static_vaxmap.png){width=100%}
+
+## Static Alternative Description 
+This static map displays simulated vaccination coverage rates across Georgia counties using a continuous color gradient. Each county is shaded according to its simulated vaccination percentage, with darker and lighter shades representing differences in coverage. County boundaries are outlined distinguishing geographic areas, and the legend provides a reference for interpreting vaccination coverage across Georgia.
