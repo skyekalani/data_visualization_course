@@ -1,0 +1,405 @@
+---
+title: "Lab 8: GIS Mapping for Public Health"
+format: html
+editor: visual
+---
+
+## Packages
+```{r}
+#install.packages("leaflet")
+#install.packages("htmltools")
+library(tidyverse)
+library(maps)
+library(sf)
+library(leaflet)
+library(htmltools)
+```
+
+# Part 1: Georgia County Boundaries
+```{r}
+georgia_counties <- maps::map(
+  database = "county",
+  regions = "georgia",
+  plot = FALSE,
+  fill = TRUE
+) %>%
+  st_as_sf() %>%
+  rename(
+    county_id = ID
+  ) %>%
+  mutate(
+    county_name = str_remove(
+      county_id,
+      "^georgia,"
+    ),
+    county_name = str_to_title(
+      county_name
+    )
+  )
+```
+
+```{r}
+ggplot(
+  data = georgia_counties
+) +
+  geom_sf(
+    fill = "#F3F4F6",
+    color = "black",
+    linewidth = 0.25
+  ) +
+  labs(
+    title = "Georgia County Boundaries",
+    caption = "Boundary data: maps R package"
+  ) +
+  theme_void()
+```
+
+# Part 2: Simulated Health Data
+```{r}
+set.seed(716)
+
+county_health <- georgia_counties %>%
+  st_drop_geometry() %>%
+  distinct(
+    county_id,
+    county_name
+  ) %>%
+  mutate(
+    vaccination_rate = pmin(
+      pmax(
+        rnorm(
+          n = n(),
+          mean = 74,
+          sd = 8
+        ),
+        45
+      ),
+      95
+    ),
+    child_population = round(
+      runif(
+        n = n(),
+        min = 1300,
+        max = 73000
+      )
+    )
+  )
+```
+
+```{r}
+county_health %>%
+  select(
+    county_name,
+    vaccination_rate,
+    child_population
+  ) %>%
+  slice_head(
+    n = 10
+  )
+```
+
+# Part 3: Join
+```{r}
+
+sum(!st_is_valid(georgia_counties)) # Checking county geometries
+
+georgia_counties <- georgia_counties %>%
+  st_make_valid() # Repairing invalid county geometries
+
+```
+
+
+```{r}
+county_map_data <- georgia_counties %>%
+  left_join(
+    county_health,
+    by = c(
+      "county_id",
+      "county_name"
+    )
+  ) # Joining health data
+```
+
+```{r}
+
+county_map_data %>%
+  summarize(
+    county_count = n(),
+    missing_rates = sum(
+      is.na(vaccination_rate)
+    )
+  )
+# Verifying join
+```
+
+# Part 4: Continuous Choropleth
+```{r}
+static_vaxmap <- ggplot(
+  data = county_map_data
+) +
+  geom_sf(
+    mapping = aes(
+      fill = vaccination_rate
+    ),
+    color = "black",
+    linewidth = 0.2
+  ) +
+  scale_fill_viridis_c(
+    option = "C",
+     na.value = "grey80", # missing color
+    direction = 1,
+    limits = c(
+      45,
+      95
+    )
+    ,
+    name = "Vaccination\ncoverage (%)"
+  ) +
+  labs(
+    title = "Simulated Vaccination Coverage Varied Across Georgia Counties",
+    subtitle = "Simulated data created for learning purposes",
+    caption = "Boundary data: maps R package | Health values are simulated"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right",
+    plot.title.position = "plot"
+  )
+
+static_vaxmap
+```
+# Part 5: Classified Choropleth
+```{r}
+county_map_data <- county_map_data %>%
+  mutate(
+    coverage_status = case_when(
+      vaccination_rate < 70 ~ "Below 70%",
+      vaccination_rate < 80 ~ "70% to 79.9%",
+      vaccination_rate >= 80 ~ "80% or higher",
+      TRUE ~ "Missing"
+    ),
+    coverage_status = factor(
+      coverage_status,
+      levels = c(
+        "Below 70%",
+        "70% to 79.9%",
+        "80% or higher",
+        "Missing"
+      )
+    )
+  )
+```
+
+```{r}
+ggplot(
+  data = county_map_data
+) +
+  geom_sf(
+    mapping = aes(
+      fill = coverage_status
+    ),
+    color = "black",
+    linewidth = 0.2
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Below 70%" = "#D55E00",
+      "70% to 79.9%" = "#E69F00",
+      "80% or higher" = "#009E73",
+      "Missing" = "grey80"
+    ),
+    drop = FALSE
+  ) +
+  labs(
+    title = "Counties Below the Simulated Target Vaccination Coverage",
+    subtitle = "Categories are based on meaningful thresholds",
+    fill = "Coverage status",
+    caption = "Boundary data: maps R package | Health values are simulated"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right",
+    plot.title.position = "plot"
+  )
+```
+
+# Part 6: Point and Proportional-Symbol Maps
+
+## Point Map
+```{r}
+set.seed(718)
+
+clinic_points <- county_map_data %>%
+  slice_sample(
+    n = 20
+  ) %>%
+  st_centroid() %>%
+  transmute(
+    clinic_name = paste(
+      county_name,
+      "Community Clinic"
+    ),
+    annual_visits = round(
+      runif(
+        n = n(),
+        min = 500,
+        max = 12000
+      )
+    )
+  )
+```
+
+```{r}
+ggplot() +
+  geom_sf(
+    data = georgia_counties,
+    fill = "grey95",
+    color = "white",
+    linewidth = 0.2
+  ) +
+  geom_sf(
+    data = clinic_points,
+    size = 2.5,
+    color = "#0072B2"
+  ) +
+  labs(
+    title = "Simulated Community Clinic Locations",
+    subtitle = "Points are generated for instructional purposes",
+    caption = "Boundary data: maps R package | Clinic locations are simulated"
+  ) +
+  theme_void()
+```
+
+## Proportional-Symbol Map
+```{r}
+ggplot() +
+  geom_sf(
+    data = georgia_counties,
+    fill = "grey95",
+    color = "white",
+    linewidth = 0.2
+  ) +
+  geom_sf(
+    data = clinic_points,
+    mapping = aes(
+      size = annual_visits
+    ),
+    color = "#0072B2",
+    alpha = 0.65
+  ) +
+  scale_size_area(
+    max_size = 11,
+    labels = scales::label_comma(),
+    name = "Annual visits"
+  ) +
+  labs(
+    title = "Simulated Clinic Volume Varied Across Locations",
+    subtitle = "Symbol area represents annual visits",
+    caption = "Boundary data: maps R package | Clinic locations and visits are simulated"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right"
+  )
+```
+
+# Part 7: Interactive Leaflet Map
+```{r}
+county_leaflet <- county_map_data %>%
+  st_transform(
+    crs = 4326
+  )
+
+coverage_palette <- colorNumeric(
+  palette = "viridis",
+  domain = county_leaflet$vaccination_rate,
+  na.color = "#BDBDBD"
+)
+
+county_labels <- paste0(
+  "<strong>",
+  htmlEscape(
+    county_leaflet$county_name
+  ),
+  " County</strong>",
+  "<br>Simulated vaccination coverage: ",
+  round(
+    county_leaflet$vaccination_rate,
+    digits = 1
+  ),
+  "%",
+  "<br>Simulated child population: ",
+  scales::comma(
+    county_leaflet$child_population
+  )
+) %>%
+  lapply(
+    HTML
+  )
+```
+
+```{r}
+interactive_vaxmap <- leaflet(
+  data = county_leaflet,
+  options = leafletOptions(
+    minZoom = 5
+  )
+) %>%
+  addProviderTiles(
+    providers$CartoDB.Positron
+  ) %>%
+  addPolygons(
+    fillColor = ~coverage_palette(
+      vaccination_rate
+    ),
+    fillOpacity = 0.8,
+    color = "white",
+    weight = 0.6,
+    opacity = 1,
+    label = county_labels,
+    highlightOptions = highlightOptions(
+      weight = 2,
+      color = "#333333",
+      fillOpacity = 0.9,
+      bringToFront = TRUE
+    )
+  ) %>%
+  addLegend(
+    pal = coverage_palette,
+    values = ~vaccination_rate,
+    title = "Simulated coverage (%)",
+    position = "bottomright",
+    opacity = 0.8
+  )
+interactive_vaxmap
+```
+
+# Part 8: Ethics and Accessibility
+
+Discuss ecological interpretation, small cells, stigma, exact locations, missing data, and a noninteractive alternative.
+
+**Response:** When creating static and interactive maps it is important to factor in ecological fallacy, small cells, stigma, exact locations, and missing data. Ecological fallacy can occur when ecological data is interpreted as an assumption of all statistical trends and characteristics being attributable to each individual within a given group. An example of this using the create interactive graphs is assuming each individual in Worth county, GA is vaccinated because they have a high simulated vaccination coverage. To prevent misleading results, it is important to make group analyses on ecological data rather than individual-level conclusions. 
+
+When creating maps it is also important to refrain from using small cell counts and exact locations of individuals. Including these features makes it easier to identify real individuals within a specific area, removing the privacy of their data. To ensure the privacy of individuals within the data it is important to use small cell size suppression and geographic masking, aggregation and other protections to ensure the data is ethical. Furthermore, small cell size suppression and other factors can create missing data in the map. When this occurs missing data should be clearly labeled and made a distinct color so viewers interpret them as missing values and not zero values. 
+
+When creating and interpreting a map it is important to refrain from stigmatizing specific communities. Stigmatizing a community can look like labeling a community as dangerous or  mapping where things are going wrong in a community without giving further context. To limit this include descriptions that explain the context of map findings. Lastly, to ensure interactive maps are accessible including static maps and alternative text descriptions ensures all viewers are able to interpret the presented data.
+
+# Part 9: Portfolio
+
+```{r}
+htmlwidgets::saveWidget( 
+  interactive_vaxmap, 
+  "interactive_vaxmap.html",
+  selfcontained = TRUE
+  )
+```
+```{r}
+ggsave(
+  "static_vaxmap.png",
+  plot = static_vaxmap,
+  width = 9,
+  height = 5,
+  dpi = 250
+)
+```
+

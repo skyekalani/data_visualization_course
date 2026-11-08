@@ -1,0 +1,89 @@
+---
+title: "In-Class Mapping"
+format: html
+editor: visual
+---
+
+## Packages
+
+```{r}
+#install.packages("maps")
+#install.packages("sf")
+library(tidyverse)
+library(maps)
+library(sf)
+```
+
+## U.S. State Boundaries
+
+```{r}
+us_states <- maps::map(
+  database = "state",
+  plot = FALSE,
+  fill = TRUE
+) %>%
+  st_as_sf() %>%
+  rename(
+    state_name = ID
+  )
+```
+
+## Visible Map
+
+```{r}
+ggplot(
+  data = us_states
+) +
+  geom_sf(
+    fill = "grey95",
+    color = "white",
+    linewidth = 0.3
+  ) +
+  labs(
+    title = "Spatial Data Can Be Stored as Polygon Features",
+    subtitle = "Each state is represented by a polygon geometry",
+    caption = "Boundary data: maps R package"
+  ) +
+  theme_void()
+```
+
+## Georgia County Boundaries
+
+```{r}
+georgia_counties <- maps::map(
+  database = "county",
+  regions = "georgia",
+  plot = FALSE,
+  fill = TRUE
+) %>%
+  st_as_sf() %>%
+  rename(
+    county_id = ID
+  ) %>%
+  mutate(
+    county_name = str_remove(
+      county_id,
+      "^georgia,"
+    ),
+    county_name = str_to_title(
+      county_name
+    )
+  )
+```
+
+```{r}
+ggplot(
+  data = georgia_counties
+) +
+  geom_sf(
+    fill = "#F3F4F6",
+    color = "pink`",
+    linewidth = 0.25
+  ) +
+  labs(
+    title = "Georgia County Boundaries",
+    subtitle = "Each polygon can be joined to county-level health information",
+    caption = "Boundary data: maps R package"
+  ) +
+  theme_void()
+```

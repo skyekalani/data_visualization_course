@@ -1,0 +1,76 @@
+---
+title: "Chapter 4: Visual"
+format: html
+editor: visual
+---
+
+## Setup
+```{r}
+install.packages("viridis")
+library(gapminder)
+```
+```{r}
+ggplot(
+  data = gapminder %>%
+    filter(year == 2007),
+  mapping = aes(
+    x = gdpPercap,
+    y = lifeExp,
+    color = continent
+  )
+) +
+  geom_point(
+    size = 3,
+    alpha = 0.8
+  ) +
+  scale_x_log10() +
+  scale_color_viridis_d() +
+  labs(
+    title = "Life Expectancy and GDP per Capita",
+    x = "GDP per capita",
+    y = "Life expectancy in years",
+    color = "Continent"
+  ) +
+  theme_minimal()
+```
+```{r}
+redesign_data <- gapminder %>%
+  filter(
+    year == 2007,
+    continent %in% c(
+      "Africa",
+      "Americas",
+      "Asia",
+      "Europe"
+    )
+  ) %>%
+  group_by(continent) %>%
+  summarize(
+    mean_life_expectancy = mean(
+      lifeExp,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot(
+  data = redesign_data,
+  mapping = aes(
+    x = continent,
+    y = mean_life_expectancy,
+    fill = continent
+  )
+) +
+  geom_col() +
+  labs(
+    title = "Average Life Expectancy by Continent in 2007",
+    x = "Continent",
+    y = "Mean Life Expectancy",
+    caption =  "Bar graph of the average life expectancy in 2007 by continent."
+  ) +
+  theme_minimal()+
+  theme(plot.caption = element_text(hjust = 0.5), legend.position = "none")
+```
+

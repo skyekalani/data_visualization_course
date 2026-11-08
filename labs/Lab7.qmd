@@ -1,0 +1,359 @@
+---
+title: "Lab 7"
+format: html
+editor: visual
+---
+
+## Packages
+```{r, results='hide'}
+#install.packages("plotly")
+#install.packages("DT")
+
+library(tidyverse)
+library(gapminder)
+library(plotly)
+library(DT)
+```
+
+# Part 1: Prepare Data
+```{r}
+gapminder_data <- gapminder %>%
+  rename(
+    life_expectancy = lifeExp,
+    population = pop,
+    gdp_per_capita = gdpPercap
+  )
+
+gapminder_2007 <- gapminder_data %>%
+  filter(year == 2007)
+```
+
+# Part 2: Static Baseline
+```{r}
+static_scatterplot <- ggplot(
+  data = gapminder_2007,
+  mapping = aes(
+    x = gdp_per_capita,
+    y = life_expectancy,
+    color = continent
+  )
+) +
+  geom_point(
+    size = 3,
+    alpha = 0.8
+  ) +
+  scale_x_log10(
+    labels = scales::label_dollar()
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Life Expectancy Generally Increased with GDP per Capita",
+    subtitle = "Country-level observations from 2007",
+    x = "GDP per Capita",
+    y = "Life expectancy (years)",
+    color = "Continent",
+    caption = "Source: Gapminder"
+  ) +
+  theme_minimal(
+    base_size = 13
+  )
+
+static_scatterplot
+```
+
+# Part 3: Custom Tooltip
+```{r}
+interactive_scatterplot <- ggplot(
+  data = gapminder_2007,
+  mapping = aes(
+    x = gdp_per_capita,
+    y = life_expectancy,
+    color = continent,
+    text = paste0(
+      "<b>",
+      country,
+      "</b>",
+      "<br>Continent: ",
+      continent,
+      "<br>Life expectancy: ",
+      round(
+        life_expectancy,
+        digits = 1
+      ),
+      " years",
+      "<br>GDP per capita: ",
+      scales::dollar(
+        round(
+          gdp_per_capita
+        )
+      ),
+      "<br>Population: ",
+      scales::comma(
+        population
+      )
+    )
+  )
+) +
+  geom_point(
+    size = 3,
+    alpha = 0.8
+  ) +
+  scale_x_log10(
+    labels = scales::label_dollar()
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Explore Life Expectancy and GDP per Capita",
+    subtitle = "Hover over a point to inspect a country",
+    x = "GDP per Capita",
+    y = "Life expectancy (years)",
+    color = "Continent"
+  ) +
+  theme_minimal(
+    base_size = 13
+  )
+```
+
+
+# Part 4: Convert with Plotly
+```{r}
+ggplotly(
+  interactive_scatterplot,
+  tooltip = "text"
+) %>%
+  config(
+    displaylogo = FALSE,
+    responsive = TRUE
+  )
+```
+
+# Part 5: Interactive Trend - Preparation
+```{r}
+continent_trends <- gapminder_data %>%
+  group_by(
+    continent,
+    year
+  ) %>%
+  summarize(
+    mean_life_expectancy = mean(
+      life_expectancy,
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  )
+```
+
+# Part 5: Interactive Trend
+```{r}
+interactive_trend <- ggplot(
+  data = continent_trends,
+  mapping = aes(
+    x = year,
+    y = mean_life_expectancy,
+    color = continent,
+    text = paste0(
+      "<b>",
+      continent,
+      "</b>",
+      "<br>Year: ",
+      year,
+      "<br>Mean life expectancy: ",
+      round(
+        mean_life_expectancy,
+        digits = 1
+      ),
+      " years"
+    )
+  )
+) +
+  geom_line(
+    linewidth = 1
+  ) +
+  geom_point(
+    size = 1.8
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Mean Life Expectancy Increased Across Continents",
+    subtitle = "Hover over a point or zoom into a time period",
+    x = "Year",
+    y = "Mean life expectancy (years)",
+    color = "Continent"
+  ) +
+  theme_minimal(
+    base_size = 13
+  )
+```
+
+```{r}
+interactive_trend <- ggplotly(
+  interactive_trend,
+  tooltip = "text",
+  dynamicTicks = TRUE
+) %>%
+  layout(
+    hovermode = "x unified"
+  ) %>%
+  config(
+    displaylogo = FALSE,
+    responsive = TRUE
+  )
+interactive_trend
+```
+ 
+# Part 6: Interactive Table
+```{r}
+table_data <- gapminder_2007 %>%
+  transmute(
+    Country = country,
+    Continent = continent,
+    `Life expectancy` = round(
+      life_expectancy,
+      digits = 1
+    ),
+    `GDP per capita` = round(
+      gdp_per_capita
+    ),
+    Population = population
+  )
+
+datatable(
+  table_data,
+  rownames = FALSE,
+  filter = "top",
+  options = list(
+    pageLength = 10,
+    autoWidth = TRUE
+  ),
+  caption = htmltools::tags$caption(
+    style = "caption-side: top; text-align: left;",
+    "Country-level indicators in 2007"
+  )
+) %>%
+  formatCurrency(
+    columns = "GDP per capita",
+    currency = "$",
+    digits = 0
+  ) %>%
+  formatRound(
+    columns = "Life expectancy",
+    digits = 1
+  ) %>%
+  formatRound(
+    columns = "Population",
+    digits = 0
+  )
+```
+# Part 7: Accessibility Alternative - Static Figure
+```{r}
+static_figure <- ggplot(
+  data = continent_trends,
+  mapping = aes(
+    x = year,
+    y = mean_life_expectancy,
+    color = continent
+  )
+) +
+  geom_line(
+  linewidth = 1
+  ) +
+  geom_point(
+    size = 1.8
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    title = "Mean Life Expectancy Increased Across Continents",
+    x = "Year",
+    y = "Mean Life Expectancy (years)",
+    color = "Continent",
+    caption = "Source: Gapminder"
+  ) +
+  theme_minimal(
+    base_size = 13
+  )
+static_figure
+```
+
+# Part 7: Accessibility Alternative - Written Summary
+
+The above graph shows the mean life expectancy over time across continents. Overall, the graph demonstrates that as time progressed, the mean life expectancy increased for each continent. Oceania had the highest average life expectancy increase over time across continents, while Africa had the lowest. These patterns may reflect broader differences between healthcare, economic development, and living conditions that influence the progression of life expectancy over time among continents.
+
+# Part 7: Accessibility Alternative - Accessible Table
+```{r}
+accessible_table_data <- gapminder_2007 %>%
+  transmute(
+    Country = country,
+    Continent = continent,
+    `Life expectancy` = round(
+      life_expectancy,
+      digits = 1
+    ),
+    `GDP per capita` = round(
+      gdp_per_capita
+    ),
+    Population = population
+  )
+
+datatable(
+  accessible_table_data,
+  rownames = FALSE,
+  filter = "top",
+  extensions = "Buttons",
+  options = list(
+    pageLength = 10,
+    autoWidth = TRUE,
+    dom = "Bfrtip",
+    buttons = c("copy", "csv", "pdf", "excel")
+),
+  caption = htmltools::tags$caption(
+    style = "caption-side: top; text-align: left;",
+    "Country-level indicators in 2007"
+  )
+) %>%
+  formatCurrency(
+    columns = "GDP per capita",
+    currency = "$",
+    digits = 0
+  ) %>%
+  formatRound(
+    columns = "Life expectancy",
+    digits = 1
+  ) %>%
+  formatRound(
+    columns = "Population",
+    digits = 0
+  )
+  
+```
+The interactive table above is made accessible by adding PDF, CSV, Excel, and Copy features. These features allow the table to be downloadable and accessible to keyboard users, screen-reader users, or users needing features that include a static version of the table.
+
+# Part 8: Evaluate Interactivity
+ 
+Explain which interaction supports which user question and whether the added complexity is justified.
+
+**Response:** The mean life expectancy across continents interactive visualization allows users to hover over data points. This hover feature supports user questions related to understanding life expectancy values for a particular continent and year. For example, users can ask "What was the mean life expectancy in Europe in 1990?" It also allows users to explore changes in a continent's average life expectancy over time and compare average life expectancy across different continents within a specific year. 
+
+The added interactivity for this visualization is justified because it gives users the ability to explore specific data points without overcrowding the visualization with numeric labels. Including all this information in a static graph would make the data more difficult to understand and interpret. Overall, the hover feature improves the visualization by making additional, specific information usable and accessible while maintaining the clarity of the graph.
+
+Furthermore, the interactive table features 2007 country-level indicators, which include country, continent, average life expectancy, population, and GDP per Capita. There are several interactive features included in this table, which consist of the ability to sort specific categories, search, filter, and change the number of rows displayed. For the search category, users are able to understand specific country-related data for GDP per Capita, population, and average life expectancy. Examples of user questions for the search feature are "What was the GDP per Capita for Japan in 2007?" or "What was the population size of Brazil in 2007?" Users are also able to sort through each indicator included in the table, allowing a user to ask, "Which countries had the highest GDP per Capita or Population size in 2007?" Adding these interactivity features is justified because it allows users to efficiently ask and answer posed questions without having to manually search through static tables that may include several pages of data. Ultimately, including the interactivity within a table improves the usability of the table data while keeping data organized and accessible.
+
+# Part 9: Portfolio
+```{r}
+htmlwidgets::saveWidget( 
+  interactive_trend, 
+  "interactive_trend.html",
+  selfcontained = TRUE
+  )
+```
+```{r}
+ggsave(
+  "static_figure.png",
+  plot = static_figure,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## Included Instructions for Interactive Graph
+Navigation Instructions: Hover over individual data points to view the continent, year, and mean life expectancy. Use the different colored lines to compare trends across continents and explore changes over time. Click and drag to zoom in on specific sections of the graph, and double-click to reset the view.

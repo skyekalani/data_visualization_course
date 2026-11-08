@@ -1,0 +1,93 @@
+---
+title: "Lab 5: Professional Quarto Portfolio Website"
+format: html
+editor: visual
+---
+ Packages
+```{r}
+library(tidyverse)
+```
+ 
+## Part 1: Plan the Website
+```{r}
+planning_table <- data_frame(
+ Website_components = c("Home", "About", "Education", "Experience", "Skills", "Projects", "CV", "Contact"
+                          ),
+  
+  Purpose = c( "Introduce and state professional identity.", "Give overview of professional background, interests, and goals.", "Give academic background", "Highlight relevant public health experiences.", "Showcase professional skills.", "To demonstrate the application of public health skills.", "To give access to current CV for employers.", "To provide contact information and links to relevant professional profiles." 
+               ),
+  
+  Required_content = c( "Name, professional title, brief introduction and navigation", "Professional biography, interests, and professional goals.", "Relevant degrees, institutions, fields of study, and dates.", "Relevant professional, research, practice, leadership, volunteer, or internship experience.", "Organized, accurate skill categories.", "At least one completed project or substantive example of professional or academic work.", "A functioning link to a current PDF.", "At least one professional method of contact and links to GitHub or other relevant professional profiles."
+                        ),
+  
+  Materials_needed = c("Professional headshot, professional title, introduction, navigation menu", "Professional biography, career goals, research interests, and public health interests.", "Degree information, institution names, fields of study, dates, and academic achievements.", "CV, internship descriptions, research experiences, and leadership roles.", "List of technical, research, analytical, communication, and professional skills.", "Project descriptions, downloadabble reports, and images.", "Current downloadable CV and a functioning website link to the file.", "Email address, LinkedIn URL, and GitHub URL."
+                       )
+ 
+)
+
+planning_table
+```
+
+# Part 2: Create the Quarto Website
+
+Create a Quarto website project with a professional repository name.
+
+Create:
+
+```text
+_quarto.yml
+index.qmd
+about.qmd
+projects.qmd
+cv.qmd
+contact.qmd
+styles.css
+images/
+files/
+```
+
+# Part 3: Configure the Website
+
+```yaml
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Skye K. Johnson, BsPH"
+  navbar:
+    left:
+    - href: index.qmd
+      text: Home
+    - href: about.qmd
+      text: About Me
+    - href: Education.qmd
+      text: Education
+    - href: Experience.qmd
+      text: Experience
+    - href: Skills.qmd
+      text: Skills
+    - href: Projects.qmd
+      text: Projects
+    - href: CV.qmd
+      text: CV
+    - href: Contact.qmd
+      text: Contact
+
+format:
+  html:
+    css: styles.css
+    toc: true
+
+editor: visual
+```
+
+# Part 9: Peer Review
+
+During our in-class peer review, two strengths mentioned were the design of my home page, which included accessible GitHub and LinkedIn links at the bottom of the page. Two areas for improvement were including only my personal email on the website's contact page and figuring out how to provide a downloadable version of my CV on the website. One question a hiring manager might have regarding my portfolio could be: What are you hoping a potential employer will take away from your digital portfolio? I am hoping an emnployer see that I can apply developed skills in public health practice. A question was also posed regarding the selected email I will display for employers. Ultimately I decided to display my personal email due to the potential of my school email being disabled after I graduate.
+
+# Part 10: Reflection
+
+When creating my digital portfolio, I wanted to portray the professional identity of a current public health student with interests in epidemiology, data science, and health equity. I wanted my website to showcase the skills I have developed as a student, how I gained them, and how I have been using them in my projects. This was done to show potential employers not just that I have skills, but that I can use these skills to strengthen their real-world projects. My major design decisions included the use of color and photos. I used different colors throughout my website, within the shades of a sunset, to match my sunset-inspired banner on the home page. Such colors were also included to add a personal touch, as my name is Skye and sunsets are among my favorite things to see in the sky. 
+
+Regarding accessibility, I decided to add quick links to my home and skills pages to make it easier to navigate to specific pages.  I also added alt text to each photo for visually impaired visitors to my website. Lastly, one of the most challenging parts of adding my website to GitHub was working in the terminal and ensuring each command was done correctly. Working in the terminal is much more complex than working within a Quarto document or website in R, and it can be challenging to understand what the terminal is saying after sending a command. Ultimately, building this website has allowed me to further strengthen my skills and work through challenges, becoming a better data scientist and future environmental epidemiologist.

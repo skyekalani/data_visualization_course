@@ -1,0 +1,18 @@
+---
+title: "Lab 6"
+format: html
+editor: visual
+---
+
+## Part 1 of Final Project Proposal: Select a Public Health Issue
+
+Describe:
+
+- The issue,
+- The population affected,
+- Why it matters,
+- What evidence may help address it.
+
+The public health issue I want to address is the impact of environmental pollution on human health. Environmental pollution is considered the presence of substances or agents from human activities that can cause adverse health effects. Environmental pollution can be ingested, inhaled, or absorbed by the body and can be exposed to humans through air, water, and soil, among other routes. Due to the various routes and mechanisms of pollutant exposure, almost everyone worldwide has been exposed to pollution. 
+
+Despite this, some communities can be disproportionately affected by environmental pollution, whether through physical vulnerability, proximity to industrial facilities, environmental policy, or structural and historical inequities. Each of these factors contributes to disproportionate environmental exposure, in turn enhancing the risk of, and susceptibility to, adverse health outcomes in the affected community. Given disproportionate environmental exposure, it is important to develop tools that examine varying exposure levels within communities and the corresponding health outcomes occurring to monitor and equitably address the impact of environmental pollution.
